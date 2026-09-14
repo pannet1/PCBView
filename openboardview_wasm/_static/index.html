@@ -352,8 +352,8 @@
   </div>
   
   <div class="header-right">
-    <form action="https://ecomsense.in/schematics" method="GET" target="_blank" class="search-form">
-      <input type="text" name="q" placeholder="Search laptop & desktop boardviews..." class="search-input" required>
+    <form action="https://ecomsense.in/schematics" method="GET" target="_blank" class="search-form" autocomplete="off">
+      <input type="text" name="q" id="ecom-search" placeholder="Search laptop & desktop boardviews..." class="search-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" required>
       <button type="submit" class="btn search-btn" title="Search ecomsense.in">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"></circle>
@@ -456,6 +456,16 @@ var dragOverlay = document.getElementById('drag-overlay');
 var emptyState = document.getElementById('empty-state');
 var Module = { canvas: canvas };
 var _pendingFile = null;
+// Fix: prevent WASM/SDL canvas from stealing keystrokes when typing in header search
+(function(){
+  var s = document.getElementById('ecom-search');
+  if(!s) return;
+  ['keydown','keyup','keypress','input'].forEach(function(ev){
+    s.addEventListener(ev, function(e){ e.stopPropagation(); }, true);
+  });
+  s.addEventListener('focus', function(){ s.setAttribute('data-focused','1'); });
+  s.addEventListener('blur', function(){ s.removeAttribute('data-focused'); });
+})();
 var statusTimeout = null;
 
 function showStatus(t, duration) {
