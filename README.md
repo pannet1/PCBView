@@ -1,126 +1,53 @@
-# PCBView — Browser PCB Viewer [![Pages](https://github.com/pannet1/PCBView/actions/workflows/pages.yml/badge.svg)](https://pannet1.github.io/PCBView/) [![Build](https://github.com/pannet1/PCBView/actions/workflows/make_packages.yml/badge.svg)](https://github.com/pannet1/PCBView/actions/)
+# PCBView — Browser PCB Viewer
 
-> **Live:** https://pannet1.github.io/PCBView/ — drag & drop any `.brd` (BRD2, BRD, BDV, BVR, etc.) — 100% client-side, no upload to server. Embed via `openboardview.js` WASM.
->
-> **No active feature dev** — this is a thin Emscripten port of OpenBoardView for the web. For desktop, use upstream.
+[![Pages](https://github.com/pannet1/PCBView/actions/workflows/pages.yml/badge.svg)](https://pannet1.github.io/PCBView/) [![Build](https://github.com/pannet1/PCBView/actions/workflows/make_packages.yml/badge.svg)](https://github.com/pannet1/PCBView/actions/)
 
----
+> **Live:** https://pannet1.github.io/PCBView/ — drag & drop any `.brd` (BRD2, BRD, BDV, BVR, etc.) — 100% client-side, no upload to server.
+
+**PCBView** is a thin [Emscripten](https://emscripten.org/) port of [OpenBoardView](https://github.com/OpenBoardView/OpenBoardView) for the web. Board files are parsed in-browser via `Module.loadBoardFromMemory()` — nothing is uploaded.
+
+No active feature development here — just the WASM conversion and GitHub Pages hosting. For the native desktop app, use [OpenBoardView/OpenBoardView](https://github.com/OpenBoardView/OpenBoardView).
+
+## Try it
+
+* **Website:** https://pannet1.github.io/PCBView/ — click **Load sample** (HP Pavilion) or drop your own `.brd`
+* **Direct file:** https://pannet1.github.io/PCBView/?file=sample.brd or `?file=https://…/board.brd`
+
+## Embed in your app
+
+```toml
+# uv / pip — either name works, pcbview-wasm is new
+pcbview-wasm = { git = "https://github.com/pannet1/PCBView", branch = "master" }
+```
+
+```python
+from pcbview import make_static_files_app  # or: from openboardview_wasm import ...
+app.mount("/pcb", make_static_files_app(), name="pcb")
+```
+
+```html
+<canvas id="canvas"></canvas>
+<script src="/pcb/openboardview.js"></script>
+<script>
+  const res = Module.loadBoardFromMemory(arrayBuffer) // 0 = success
+</script>
+```
+
+See [WASM_PORT.md](WASM_PORT.md) for JS API (`loadBoardFromMemory`, `_loadBoardFromMemory`), CLI, and build docs.
+
+## Build from source
+
+```bash
+git clone --recurse-submodules https://github.com/pannet1/PCBView
+cd PCBView
+./scripts/build-wasm.sh  # needs Emscripten 3.1.69
+# output: build_wasm/src/openboardview/openboardview.js -> openboardview_wasm/_static/
+```
 
 ## Credits
 
-* **Upstream viewer:** [OpenBoardView/OpenBoardView](https://github.com/OpenBoardView/OpenBoardView) (MIT) — Paul Daniels, chloridite, contributors. All board parsing, rendering, and UI is theirs.
-* **Web port:** [Emscripten](https://emscripten.org/) (MIT) — compiles C++ SDL2/ImGui to WebAssembly. Build via `./scripts/build-wasm.sh` (see `WASM_PORT.md`).
-* **This fork:** [pannet1/PCBView](https://github.com/pannet1/PCBView) — packaging as `pcbview-wasm`/`openboardview-wasm` + GitHub Pages hosting. No board files are stored — files are parsed in-browser via `Module.loadBoardFromMemory()`.
+* **Upstream viewer:** [OpenBoardView/OpenBoardView](https://github.com/OpenBoardView/OpenBoardView) (MIT) — Paul Daniels, chloridite and contributors. All board parsing, rendering and UI is theirs.
+* **Web port:** [Emscripten](https://emscripten.org/) (MIT) — C++ SDL2/ImGui → WebAssembly.
+* **This fork:** [pannet1/PCBView](https://github.com/pannet1/PCBView) (MIT) — packaging as `pcbview-wasm` + GitHub Pages. Fork detached from upstream to host the web build independently.
 
----
-
-## Open Board Viewer [![Build Status](../../actions/workflows/make_packages.yml/badge.svg?event=push)](../../actions/)
-
-Linux SDL/ImGui edition software for viewing .brd files, intended as a drop-in
-replacement for the "Test_Link" software and "Landrex".
-
-
-[![Walkthrough of OpenBoardView R7.2](http://img.youtube.com/vi/6CrNRo1UP5g/0.jpg)](http://www.youtube.com/watch?v=6CrNRo1UP5g "OpenBoardView R7.2 demonstration, with voice-over")
-
-[![Demo Video](https://github.com/OpenBoardView/OpenBoardView/blob/master/asset/screenshot.png)]()
-
-
-![Common net pin halo](https://github.com/OpenBoardView/OpenBoardView/blob/master/asset/screenshot-halo.png)
-
-![Part searching](https://github.com/OpenBoardView/OpenBoardView/blob/master/asset/screenshot-partsearch.png)
-
-
-### Features
-
-- Annotations (per board database file)
-- Part and pin sizes better represented
-- Better outlining of irregular objects (such as connectors)
-- Drag and drop
-- Recently used file history
-- Non-orthagonally orientated caps/resistors/diodes now drawn more realistically
-- Adjustable DPI (for working on 2K/4K screens)
-- Works with multiple concurrent instances
-
-
-### TODO
-
-- Decode more board formats
-- Compound project/file format
-
-
-### Prerequisites
-
-#### macOS
-	$ brew install cmake sdl2
-
-If you get the following error after running `build.sh`:
-
-	urllib.error.URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:997)>
-
-
-Run the script at `/Applications/Python3.x/Install Certificates.command`.
-
-
-#### Ubuntu
-
-For Ubuntu developers, you'll need the following packages at a minimum;
-
-	$ apt-get install git build-essential cmake libsdl2-dev libgtk-3-dev
-
-#### Fedora
-
-For Fedora, you will need the following packages at a minimum;
-
-	$ dnf install @development-tools
-
-	$ dnf install SDL2-devel gtk3-devel fontconfig-devel cmake
-
-### Installation
-
-1. Clone the project
-```
-$ git clone --recursive 'https://github.com/OpenBoardView/OpenBoardView'
-```
-2. Build it
-```
-$ ./build.sh
-```
-3. Sign it (skip if you're not on running macOS)
-```
-$ codesign --force --deep --sign - ./openboardview.app
-```
-4. Run it!
-```
-$ ./bin/openboardview
-```
-...or...
-```
-$ ./openboardview.sh
-```
-...or...
-```
-$ open ./openboardview.app
-```
-
-### Usage
-
-- Ctrl-O: Open file select dialog
-
-- w/a/s/d: pan viewport over board
-- x: Reset zoom and center
-- Mouse scroll, -/=: Zoom out/in
-- Mouse click-hold-drag, Numeric pad up/down/left/right: pan viewport over board
-- Numeric pad +/-: zoom board
-- Numeric pad 5: Reset zoom and center
-- Space, Middle mouse click: Flip board
-- R/./Numpad-Del: Rotate clockwise
-- ,/Numpad-Ins: Rotate counter-clockwise
-
-- /, Ctrl-F: Search
-- ESC: Clear search results and selected parts
-
-- p: Toggle pin display
-- m: Mirror board across Y-axis
-
-- L: Show net list
-- K: Show part list
+_Board files stay in your browser. No storage, no tracking._
