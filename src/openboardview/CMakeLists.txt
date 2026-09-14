@@ -17,7 +17,11 @@ else()
 		find_library(COCOA_LIBRARY Cocoa)
 		find_package(OpenGL REQUIRED)
 		set(OPENGL_INCLUDE_DIR ${OPENGL_INCLUDE_DIR}/Headers)
-	else(APPLE)
+	elseif(EMSCRIPTEN)
+		# Emscripten: no fontconfig, GTK, GIO — browser handles fonts, files, etc.
+		add_definitions(-DENABLE_GLES2)
+		add_definitions(-DPLATFORM_EMSCRIPTEN)
+	else()
 		find_package(PkgConfig REQUIRED)
 
 		pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
@@ -47,7 +51,7 @@ else()
 		else()
 			message(SEND_ERROR "GIO not found, PDFBridgeEvince cannot be enabled.")
 		endif()
-	endif(APPLE)
+	endif()
 endif()
 
 # python is required for GenCAD grammar build-rime generation
@@ -135,6 +139,10 @@ if(WIN32)
 		PDFBridge/PDFBridgeSumatra.cpp
 		win32.cpp
 	)
+elseif(EMSCRIPTEN)
+	set(SOURCES ${SOURCES}
+		emscripten_platform.cpp
+	)
 else()
 if(APPLE)
 	set(SOURCES ${SOURCES}
@@ -174,7 +182,11 @@ add_executable(${PROJECT_NAME_LOWER}
 	${ASSETS}
 )
 
-if(MINGW) # Dirty fix to force linking all libs (esp. libstdc++) statically for Windows
+if(EMSCRIPTEN)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -O2 -s USE_SDL=2 -s USE_SQLITE3=1 -s USE_ZLIB=1 -s ALLOW_MEMORY_GROWTH=1 -s WASM=0 -s STACK_SIZE=5MB -s EXPORTED_RUNTIME_METHODS=ccall,cwrap -s EXPORTED_FUNCTIONS=_malloc,_free,_main,_loadBoardFromMemory,_wasmTest,_testData")
+
+elseif(MINGW)
 	set(CMAKE_EXE_LINKER_FLAGS "-static -static-libgcc -static-libstdc++")
 	set_target_properties(${PROJECT_NAME_LOWER} PROPERTIES LINK_SEARCH_END_STATIC 1)
 elseif(APPLE)

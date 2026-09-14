@@ -38,6 +38,20 @@
 
 #include "filesystem_impl.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include "FileFormats/BRDFile.h"
+#include "FileFormats/BRD2File.h"
+#include "FileFormats/GenCADFile.h"
+#include "FileFormats/ADFile.h"
+#include "FileFormats/CADFile.h"
+#include "FileFormats/BDVFile.h"
+#include "FileFormats/BVRFile.h"
+#include "FileFormats/BVR3File.h"
+#include "FileFormats/BRDAllegroFile.h"
+#include "FileFormats/XZZPCBFile.h"
+#endif
+
 // Handling of DDE command line argument for PDFBridge
 #ifdef _WIN32
 #include "PDFBridge/PDFBridgeSumatra.h"
@@ -63,6 +77,8 @@ struct globals {
 };
 
 static SDL_Window *window      = nullptr;
+
+std::unique_ptr<BoardView> g_app;
 
 char help[] =
     " [-h] [-V] [-l] [-c <config file>] [-i <intput file>] [-x <width>] [-y <height>] [-z <fontsize>] [-p <dpi>] [-r <renderer>] [-d]\n\
@@ -211,11 +227,141 @@ void cleanupAndExit(int c) {
 	exit(c);
 }
 
+struct MainLoopCtx {
+	BoardView *app;
+	std::string *configDir;
+	ImVec4 *clear_color;
+	Fonts *fonts;
+	globals *g;
+	bool *preload_required;
+	uint8_t *sleepout;
+	float *angleacc;
+	bool *done;
+};
+
+static void main_loop_cb(void *arg) {
+	MainLoopCtx *ctx = (MainLoopCtx *)arg;
+	BoardView &app = *ctx->app;
+	ImVec4 &clear_color = *ctx->clear_color;
+	Fonts &fonts = *ctx->fonts;
+	globals &g = *ctx->g;
+	std::string &configDir = *ctx->configDir;
+	bool &preload_required = *ctx->preload_required;
+	uint8_t &sleepout = *ctx->sleepout;
+	float &angleacc = *ctx->angleacc;
+	bool &done = *ctx->done;
+	SDL_Window *window = Renderers::current->getWindow();
+
+	SDL_Event event;
+	while (SDL_PollEvent(&event)) {
+		sleepout = 30;
+		Renderers::current->processEvent(event);
+
+		if (event.type == SDL_DROPFILE) {
+			app.LoadFile(filesystem::u8path(event.drop.file));
+		} else if(event.type == SDL_MULTIGESTURE && event.mgesture.numFingers == 2 && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+			app.m_dragging_token = -1;
+			if (fabs(event.mgesture.dTheta) > 3.14 / 180.0) {
+				angleacc += event.mgesture.dTheta;
+				if (angleacc >= 3.14 / 2) {
+					app.Rotate(1);
+					angleacc = 0.0;
+				} else if (angleacc <= -3.14 / 2) {
+					app.Rotate(-1);
+					angleacc = 0.0;
+				}
+			}
+			else if (fabs(event.mgesture.dDist) > 0.002) {
+				int w, h;
+				SDL_GetWindowSize(window, &w, &h);
+				app.Zoom(event.mgesture.x * w, event.mgesture.y * h, event.mgesture.dDist * app.config.zoomFactor * 10);
+			}
+		}
+
+		if (event.type == SDL_QUIT) done = true;
+	}
+
+	if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+		angleacc = 0.0;
+	}
+
+	if (app.reloadConfig) {
+		app.reloadConfig = false;
+		app.obvconfig.Load(configDir + "obv.conf");
+		app.ConfigParse();
+		clear_color = ImColor(app.m_colors.backgroundColor);
+	}
+
+	if (app.reloadFonts) {
+		fonts.reload(app.config.fontName);
+		app.reloadFonts = false;
+	}
+
+#ifndef __EMSCRIPTEN__
+	if (!(sleepout--)) {
+		usleep(50000);
+		sleepout = 0;
+		return;
+	}
+#endif
+
+	Renderers::current->initFrame();
+	ImGui::NewFrame();
+
+	if (preload_required) {
+		app.LoadFile(filesystem::u8path(g.input_file));
+		preload_required = false;
+	}
+
+	app.Update();
+	if (app.m_wantsQuit) {
+		SDL_Event sdlevent;
+		sdlevent.type = SDL_QUIT;
+		SDL_PushEvent(&sdlevent);
+	}
+
+	if (app.history_file_has_changed) {
+		char scratch[1024];
+		snprintf(scratch, sizeof(scratch), "%s - %s", OBV_NAME, app.fhistory.history[0]);
+		SDL_SetWindowTitle(window, scratch);
+		app.history_file_has_changed = 0;
+	}
+
+	ImGui::Render();
+	Renderers::current->renderFrame(clear_color);
+
+#ifndef __EMSCRIPTEN__
+	if (!SDL_GL_GetSwapInterval()) {
+		static const int FPS = 30;
+		static const std::chrono::duration<std::intmax_t, std::ratio<1, FPS>> frameDuration{1};
+		static auto nextFrame = std::chrono::steady_clock::now() + frameDuration;
+		std::this_thread::sleep_until(nextFrame);
+		nextFrame += frameDuration;
+	}
+#endif
+}
+
 int main(int argc, char **argv) {
 	uint8_t sleepout;
 	std::string configDir;
-	globals g; // because some things we have to store *before* we load the config file in BoardView app.obvconf
-	BoardView app{};
+	globals g; // because some things we have to store *before* we load the config file in BoardView app->obvconf
+	auto app = std::make_unique<BoardView>();
+	g_app = std::move(app);
+#ifdef __EMSCRIPTEN__
+	EM_ASM({
+		if (typeof Module !== 'undefined' && !Module.loadBoardFromMemory) {
+			Module.loadBoardFromMemory = function(arrayBuffer) {
+				var data = new Uint8Array(arrayBuffer);
+				var ptr = Module._malloc(data.length);
+				if (!ptr) return -1;
+				Module.HEAPU8.set(data, ptr);
+				var result = Module._loadBoardFromMemory(ptr, data.length);
+				Module._free(ptr);
+				return result;
+			};
+		}
+	});
+#endif
 
 	SDL_LogSetAllPriority(SDL_LOG_PRIORITY_INFO);
 
@@ -236,10 +382,10 @@ int main(int argc, char **argv) {
 	 */
 	parse_parameters(argc, argv, &g);
 
-	app.debug = g.debug;
+	app->debug = g.debug;
 
 	// Log all messages
-	if (app.debug) {
+	if (app->debug) {
 		SDL_LogSetAllPriority(SDL_LOG_PRIORITY_VERBOSE);
 	}
 
@@ -261,22 +407,22 @@ int main(int argc, char **argv) {
 
 	// Load the configuration file
 	configDir = get_user_dir(UserDir::Config);
-	if (!configDir.empty()) app.obvconfig.Load(configDir + "obv.conf", true);
+	if (!configDir.empty()) app->obvconfig.Load(configDir + "obv.conf", true);
 
 	// Load file history
 	std::string dataDir = get_user_dir(UserDir::Data);
 	if (!dataDir.empty()) {
-		app.fhistory.Set_filename(dataDir + "obv.history");
-		app.fhistory.Load();
+		app->fhistory.Set_filename(dataDir + "obv.history");
+		app->fhistory.Load();
 	}
 
 	// If we've chosen to override the normally found config.
-	if (g.config_file) app.obvconfig.Load(g.config_file, true);
+	if (g.config_file) app->obvconfig.Load(g.config_file, true);
 
 #ifdef _WIN32
 	// Run PDF reverse search command if called with --reversesearch
 	if (g.pdfBridgePdfPath != nullptr && g.pdfBridgeSearchStr != nullptr) {
-		PDFBridgeSumatra &pdfBrdigeSumatra = PDFBridgeSumatra::GetInstance(app.obvconfig);
+		PDFBridgeSumatra &pdfBrdigeSumatra = PDFBridgeSumatra::GetInstance(app->obvconfig);
 		if (!pdfBrdigeSumatra.ReverseSearch(g.pdfBridgePdfPath, g.pdfBridgeSearchStr)) {
 			return 2;
 		} else {
@@ -286,13 +432,13 @@ int main(int argc, char **argv) {
 #endif
 
 	// Apply the slowCPU flag if required.
-	app.config.slowCPU = g.slowCPU;
+	app->config.slowCPU = g.slowCPU;
 
-	if (g.width == 0) g.width   = app.config.windowX;
-	if (g.height == 0) g.height = app.config.windowY;
+	if (g.width == 0) g.width   = app->config.windowX;
+	if (g.height == 0) g.height = app->config.windowY;
 
 	if (g.renderer == Renderers::Renderer::DEFAULT) {
-		g.renderer = Renderers::get(app.obvconfig.ParseInt("renderer", static_cast<int>(Renderers::Preferred)));
+		g.renderer = Renderers::get(app->obvconfig.ParseInt("renderer", static_cast<int>(Renderers::Preferred)));
 	}
 
 	float main_scale = ImGuiRendererSDL::getDisplayScale();
@@ -352,27 +498,27 @@ int main(int argc, char **argv) {
 	if (g.dpi > 0) setDPI(g.dpi);
 
 	// Now that the configuration file is loaded in to BoardView, parse its settings.
-	app.ConfigParse();
+	app->ConfigParse();
 
 	// Preset some workable sizes
-	app.m_board_surface.x = g.width;
-	app.m_board_surface.y = g.height;
-	if (app.config.showInfoPanel) app.m_board_surface.x -= app.m_info_surface.x;
-	if (app.m_board_surface.x <= 0.0f) {
-		app.m_board_surface.x = g.width * 0.66f;
-		app.m_info_surface.x = g.width - app.m_board_surface.x;
+	app->m_board_surface.x = g.width;
+	app->m_board_surface.y = g.height;
+	if (app->config.showInfoPanel) app->m_board_surface.x -= app->m_info_surface.x;
+	if (app->m_board_surface.x <= 0.0f) {
+		app->m_board_surface.x = g.width * 0.66f;
+		app->m_info_surface.x = g.width - app->m_board_surface.x;
 	}
 
-	if (g.font_size > 0.0) app.config.fontSize = g.font_size;
+	if (g.font_size > 0.0) app->config.fontSize = g.font_size;
 
 	Fonts fonts;
-	std::string loadedFontName = fonts.load(app.config.fontName);
+	std::string loadedFontName = fonts.load(app->config.fontName);
 	if (!loadedFontName.empty()) { // Overwrite saved font name by the one that has just been loaded
-		app.obvconfig.WriteStr("fontName", loadedFontName.c_str());
+		app->obvconfig.WriteStr("fontName", loadedFontName.c_str());
 	}
 
 	// ImVec4 clear_color = ImColor(20, 20, 30);
-	ImVec4 clear_color = ImColor(app.m_colors.backgroundColor);
+	ImVec4 clear_color = ImColor(app->m_colors.backgroundColor);
 
 	/*
 	 * If we've asked to load a file from the command line
@@ -398,110 +544,12 @@ int main(int argc, char **argv) {
 	 */
 	sleepout = 30;
 	float angleacc = 0.0;
-	while (!done) {
+	MainLoopCtx ctx = {g_app.get(), &configDir, &clear_color, &fonts, &g, &preload_required, &sleepout, &angleacc, &done};
 
-		SDL_Event event;
-		while (SDL_PollEvent(&event)) {
-			sleepout = 30;
-			Renderers::current->processEvent(event);
-
-			if (event.type == SDL_DROPFILE) {
-				app.LoadFile(filesystem::u8path(event.drop.file));
-			} else if(event.type == SDL_MULTIGESTURE && event.mgesture.numFingers == 2 && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-				//Inhibit dragging board area
-				app.m_dragging_token = -1;
-				//Rotation detected, at least 1°
-				if (fabs(event.mgesture.dTheta) > 3.14 / 180.0) {
-					angleacc += event.mgesture.dTheta;
-					if (angleacc >= 3.14 / 2) {
-						// > 90°
-						app.Rotate(1);
-						angleacc = 0.0;
-					} else if (angleacc <= -3.14 / 2) {
-						// < 90°
-						app.Rotate(-1);
-						angleacc = 0.0;
-					}
-				}
-				//Pinch-to-zoom
-				else if (fabs(event.mgesture.dDist) > 0.002) {
-					int w, h;
-					SDL_GetWindowSize(window, &w, &h);
-					app.Zoom(event.mgesture.x * w, event.mgesture.y * h, event.mgesture.dDist * app.config.zoomFactor * 10);
-				}
-			}
-
-			if (event.type == SDL_QUIT) done = true;
-		}
-
-		// reset rotation angle accumulator
-		if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-			angleacc = 0.0;
-		}
-
-		if (app.reloadConfig) {
-			app.reloadConfig = false;
-			app.obvconfig.Load(configDir + "obv.conf");
-			app.ConfigParse();
-			clear_color = ImColor(app.m_colors.backgroundColor);
-		}
-
-		if (app.reloadFonts) {
-			// Needs to happen after frame has been rendered (or before starting a new frame)
-			fonts.reload(app.config.fontName);
-			app.reloadFonts = false;
-		}
-
-		if (!(sleepout--)) {
-#ifdef _WIN32
-			Sleep(50);
+#ifdef __EMSCRIPTEN__
+	emscripten_set_main_loop_arg(main_loop_cb, &ctx, 0, 1);
 #else
-			usleep(50000);
-#endif
-			sleepout = 0;
-			continue;
-		} // puts OBV to sleep if nothing is happening.
-		// Prepare frame
-		Renderers::current->initFrame();
-		ImGui::NewFrame();
-
-		// If we have a board to view being passed from command line, then "inject"
-		// it here.
-		if (preload_required) {
-			app.LoadFile(filesystem::u8path(g.input_file));
-			preload_required = false;
-		}
-
-		app.Update();
-		if (app.m_wantsQuit) {
-			SDL_Event sdlevent;
-			sdlevent.type = SDL_QUIT;
-			SDL_PushEvent(&sdlevent);
-		}
-
-		// Update the title of the SDL app if the board filename has changed. -
-		// PLD20160618
-		if (app.history_file_has_changed) {
-			char scratch[1024];
-			snprintf(scratch, sizeof(scratch), "%s - %s", OBV_NAME, app.fhistory.history[0]);
-			SDL_SetWindowTitle(window, scratch);
-			app.history_file_has_changed = 0;
-		}
-
-		// Render frame
-		ImGui::Render();
-		Renderers::current->renderFrame(clear_color);
-
-		// vsync disabled, manual FPS limiting
-		if (!SDL_GL_GetSwapInterval()) {
-			static const int FPS = 30;
-			static const std::chrono::duration<std::intmax_t, std::ratio<1, FPS>> frameDuration{1};
-			static auto nextFrame = std::chrono::steady_clock::now() + frameDuration;
-
-			std::this_thread::sleep_until(nextFrame);
-			nextFrame += frameDuration;
-		}
-	}
+	while (!done) { main_loop_cb(&ctx); }
 
 	// Cleanup
 	Renderers::current->shutdown();
@@ -510,4 +558,25 @@ int main(int argc, char **argv) {
 
 	cleanupAndExit(0);
 	return 0;
+#endif
 }
+
+#ifdef __EMSCRIPTEN__
+extern "C" {
+int EMSCRIPTEN_KEEPALIVE wasmTest() {
+	return 42;
+}
+int EMSCRIPTEN_KEEPALIVE loadBoardFromMemory(const char *data, int length) {
+	if (!data || length <= 0) return -1;
+	std::vector<char> buffer(data, data + length);
+	if (buffer.empty()) return -2;
+	int ret = g_app->LoadFromBuffer(buffer);
+	return ret;
+}
+
+int EMSCRIPTEN_KEEPALIVE testData(const char *data, int length) {
+	if (!data || length <= 0) return -2;
+	return length > 0 ? (unsigned char)data[0] : -3;
+}
+}
+#endif
