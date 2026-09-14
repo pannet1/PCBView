@@ -10,7 +10,7 @@ Credits: Upstream viewer © OpenBoardView contributors (MIT), Web port via Emscr
 
 ```toml
 # pyproject.toml (either name works — pcbview-wasm is new, openboardview-wasm kept for compat)
-pcbview-wasm = { git = "https://github.com/pannet1/PCBView", branch = "master" }
+pcbview-wasm = { git = "https://github.com/pannet1/PCBView", branch = "main" }
 # or: openboardview-wasm = { git = "https://github.com/pannet1/PCBView" }
 ```
 

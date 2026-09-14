@@ -37,7 +37,7 @@ You can easily embed PCBView into your Python backend or frontend applications.
 ### Python / FastAPI
 ```toml
 # In your pyproject.toml
-pcbview-wasm = { git = "https://github.com/pannet1/PCBView", branch = "master" }
+pcbview-wasm = { git = "https://github.com/pannet1/PCBView", branch = "main" }
 ```
 
 ```python
