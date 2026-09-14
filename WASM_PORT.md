@@ -2,7 +2,7 @@
 
 **PCBView** is an [Emscripten](https://emscripten.org/) port of [OpenBoardView/OpenBoardView](https://github.com/OpenBoardView/OpenBoardView) compiled to WebAssembly/asm.js for the browser.
 
-Live: **https://pannet1.github.io/PCBView/** — drag & drop any `.brd` file, 100% client-side.
+Live: **https://pannet1.github.io/PCBView/** — drag & drop any board file (.brd, .bdv, .asc, etc.), 100% client-side.
 
 Credits: Upstream viewer © OpenBoardView contributors (MIT), Web port via Emscripten (MIT), packaging by [pannet1/PCBView](https://github.com/pannet1/PCBView).
 

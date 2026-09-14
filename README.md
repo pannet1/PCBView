@@ -3,7 +3,7 @@
 # 🔎 PCBView
 
 **A blazing-fast, 100% client-side PCB Viewer for the browser.**<br>
-Drag & drop your `.brd` files instantly. No server uploads. No tracking.
+Drag & drop your board files instantly (.brd, .bdv, .asc, .cad, etc.). No server uploads. No tracking.
 
 [![Pages](https://github.com/pannet1/PCBView/actions/workflows/pages.yml/badge.svg)](https://pannet1.github.io/PCBView/)
 [![Build](https://github.com/pannet1/PCBView/actions/workflows/make_packages.yml/badge.svg)](https://github.com/pannet1/PCBView/actions/)
@@ -21,7 +21,7 @@ Drag & drop your `.brd` files instantly. No server uploads. No tracking.
 ## 🚀 Features
 
 - **100% Client-Side:** Your files stay on your machine. Everything runs securely inside your browser using WebAssembly.
-- **Drag & Drop:** Instantly load `.brd` files (BRD2, BRD, BDV, BVR, BVR3, ASC, CAD, CST, etc.) by dropping them onto the page.
+- **Drag & Drop:** Instantly load board files (BRD2, BRD, BDV, BVR, BVR3, ASC, CAD, CST, etc.) by dropping them onto the page.
 - **High Performance:** Powered by C++, SDL2, and ImGui, compiled to high-speed WASM.
 - **Embeddable:** Easily integrate the viewer into your own Python/FastAPI backend or static HTML site.
 
