@@ -305,24 +305,26 @@
   }
   
   .empty-box {
-    background: rgba(30, 41, 59, 0.5);
-    border: 1px dashed var(--border);
+    background: #1e293b;
+    border: 1px solid #475569;
     padding: 40px;
     border-radius: 16px;
     text-align: center;
-    backdrop-filter: blur(8px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05) inset;
     max-width: 400px;
     pointer-events: auto;
+    isolation: isolate;
   }
   
   .empty-box h2 {
     font-size: 1.25rem;
     font-weight: 600;
     margin-bottom: 8px;
+    color: #f8fafc;
   }
   
   .empty-box p {
-    color: var(--muted);
+    color: #cbd5e1;
     font-size: 0.875rem;
     margin-bottom: 24px;
     line-height: 1.5;
@@ -399,9 +401,9 @@
           <hr style="flex:1; border:none; border-top:1px solid var(--border);">
         </div>
         
-        <div style="display:flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: rgba(15, 23, 42, 0.6);">
-          <input type="text" id="urlInput" placeholder="Enter board file URL..." style="background:transparent; border:none; color:var(--fg); padding:8px 12px; outline:none; flex:1; font-size:0.875rem;">
-          <button class="btn" id="loadUrlBtn" style="border:none; border-left:1px solid var(--border); border-radius:0;">Load</button>
+        <div style="display:flex; border: 1px solid #475569; border-radius: var(--radius); overflow: hidden; background: #0f172a;">
+          <input type="text" id="urlInput" placeholder="Enter board file URL..." style="background:transparent; border:none; color:#f1f5f9; padding:8px 12px; outline:none; flex:1; font-size:0.875rem;">
+          <button class="btn" id="loadUrlBtn" style="border:none; border-left:1px solid #475569; border-radius:0; background:#1e293b; color:#f1f5f9;">Load</button>
         </div>
       </div>
     </div>
