@@ -125,47 +125,27 @@ jobs:
           path: '*.dmg'
   build-64bit-exe-on-windows:
     runs-on: windows-2025
+    defaults:
+      run:
+        shell: msys2 {0}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: false
           fetch-depth: 0
-      - name: Set up shell
-        shell: bash
-        run: |
-          echo 'C:\msys64\usr\bin\' >> "$GITHUB_PATH"
-          echo 'C:\msys64\ucrt64\bin\' >> "$GITHUB_PATH"
-      - name: Install dependencies
-        shell: bash
-        run: |
-          # Work around stale PGP signatures / corrupted DB on windows-2025 images
-          rm -rf /var/lib/pacman/sync/* 2>/dev/null || true
-          pacman-key --init 2>/dev/null || true
-          pacman-key --populate msys2 2>/dev/null || true
-          # Try to refresh keyring without DB signature check
-          curl -L -o /tmp/msys2-keyring.pkg.tar.zst https://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.zst 2>/dev/null || wget -O /tmp/msys2-keyring.pkg.tar.zst https://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.zst 2>/dev/null || true
-          pacman -U --noconfirm /tmp/msys2-keyring.pkg.tar.zst 2>/dev/null || true
-          # Disable signature check temporarily for initial sync
-          cp /etc/pacman.conf /tmp/pacman.conf.bak 2>/dev/null || true
-          sed -i 's/^SigLevel.*/SigLevel = Never/' /etc/pacman.conf 2>/dev/null || echo "SigLevel = Never" >> /etc/pacman.conf
-          pacman -Sy --noconfirm || true
-          cp /tmp/pacman.conf.bak /etc/pacman.conf 2>/dev/null || sed -i 's/^SigLevel.*/SigLevel = Required DatabaseOptional/' /etc/pacman.conf
-          pacman -S --noconfirm --needed msys2-keyring mingw-w64-ucrt-x86_64-keyring 2>/dev/null || true
-          pacman-key --populate 2>/dev/null || true
-          pacman -Su --noconfirm 2>/dev/null || true
-          pacman -S --noconfirm --needed make mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-SDL2 mingw-w64-ucrt-x86_64-pkgconf pkgconf
-          # Preinstalled python forced into UTF8 mode is used
-      - uses: actions/setup-python@v6
+      - uses: msys2/setup-msys2@v2
         with:
-          python-version: '3.14'
+          msystem: UCRT64
+          update: true
+          install: make mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-SDL2 mingw-w64-ucrt-x86_64-pkgconf pkgconf python python-pip
       - name: Install dependencies (jinja2)
-        shell: bash
-        run: PYTHONUTF8=1 python3 -m pip install jinja2 --break-system-packages
+        shell: msys2 {0}
+        run: python -m pip install jinja2 --break-system-packages
       - name: Build ucrt64 debug
         if: always()
-        shell: bash
+        shell: msys2 {0}
         run: |
-          PYTHONUTF8=1 ./build.sh --debug --recompile
+          ./build.sh --debug --recompile
           mv bin/openboardview.exe bin/openboardview_DEBUG.exe
       - uses: actions/upload-artifact@v4
         if: always()
@@ -174,9 +154,9 @@ jobs:
           path: bin/openboardview_DEBUG.exe
       - name: Build ucrt64
         if: always()
-        shell: bash
+        shell: msys2 {0}
         run: |
-          PYTHONUTF8=1 ./build.sh --recompile
+          ./build.sh --recompile
       - uses: actions/upload-artifact@v4
         if: always()
         with:
