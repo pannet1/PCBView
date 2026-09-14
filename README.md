@@ -1,53 +1,84 @@
-# PCBView — Browser PCB Viewer
+<div align="center">
 
-[![Pages](https://github.com/pannet1/PCBView/actions/workflows/pages.yml/badge.svg)](https://pannet1.github.io/PCBView/) [![Build](https://github.com/pannet1/PCBView/actions/workflows/make_packages.yml/badge.svg)](https://github.com/pannet1/PCBView/actions/)
+# 🔎 PCBView
 
-> **Live:** https://pannet1.github.io/PCBView/ — drag & drop any `.brd` (BRD2, BRD, BDV, BVR, etc.) — 100% client-side, no upload to server.
+**A blazing-fast, 100% client-side PCB Viewer for the browser.**<br>
+Drag & drop your `.brd` files instantly. No server uploads. No tracking.
 
-**PCBView** is a thin [Emscripten](https://emscripten.org/) port of [OpenBoardView](https://github.com/OpenBoardView/OpenBoardView) for the web. Board files are parsed in-browser via `Module.loadBoardFromMemory()` — nothing is uploaded.
+[![Pages](https://github.com/pannet1/PCBView/actions/workflows/pages.yml/badge.svg)](https://pannet1.github.io/PCBView/)
+[![Build](https://github.com/pannet1/PCBView/actions/workflows/make_packages.yml/badge.svg)](https://github.com/pannet1/PCBView/actions/)
 
-No active feature development here — just the WASM conversion and GitHub Pages hosting. For the native desktop app, use [OpenBoardView/OpenBoardView](https://github.com/OpenBoardView/OpenBoardView).
+[**✨ Try it Live! ✨**](https://pannet1.github.io/PCBView/)
 
-## Try it
+</div>
 
-* **Website:** https://pannet1.github.io/PCBView/ — click **Load sample** (HP Pavilion) or drop your own `.brd`
-* **Direct file:** https://pannet1.github.io/PCBView/?file=sample.brd or `?file=https://…/board.brd`
+---
 
-## Embed in your app
+**PCBView** is a lightweight [Emscripten](https://emscripten.org/) WebAssembly port of the excellent [OpenBoardView](https://github.com/OpenBoardView/OpenBoardView). It brings the power of native desktop PCB visualization directly to your browser.
 
+> ⚠️ **Note:** This repository is focused strictly on the WASM conversion, packaging, and GitHub Pages hosting. For the native desktop application and feature requests, please visit the upstream repository: [OpenBoardView/OpenBoardView](https://github.com/OpenBoardView/OpenBoardView).
+
+## 🚀 Features
+
+- **100% Client-Side:** Your files stay on your machine. Everything runs securely inside your browser using WebAssembly.
+- **Drag & Drop:** Instantly load `.brd` files (BRD2, BRD, BDV, BVR, BVR3, ASC, CAD, CST, etc.) by dropping them onto the page.
+- **High Performance:** Powered by C++, SDL2, and ImGui, compiled to high-speed WASM.
+- **Embeddable:** Easily integrate the viewer into your own Python/FastAPI backend or static HTML site.
+
+## 🎮 Try it Out
+
+* **Web Viewer:** [https://pannet1.github.io/PCBView/](https://pannet1.github.io/PCBView/)
+* **Direct File Load:** You can auto-load a file using URL parameters: `https://pannet1.github.io/PCBView/?file=sample.brd` or `?file=https://your-domain.com/board.brd`
+
+## 📦 Embed in Your App
+
+You can easily embed PCBView into your Python backend or frontend applications.
+
+### Python / FastAPI
 ```toml
-# uv / pip — either name works, pcbview-wasm is new
+# In your pyproject.toml
 pcbview-wasm = { git = "https://github.com/pannet1/PCBView", branch = "master" }
 ```
 
 ```python
-from pcbview import make_static_files_app  # or: from openboardview_wasm import ...
+from fastapi import FastAPI
+from pcbview import make_static_files_app
+
+app = FastAPI()
 app.mount("/pcb", make_static_files_app(), name="pcb")
 ```
 
+### Static HTML
 ```html
 <canvas id="canvas"></canvas>
 <script src="/pcb/openboardview.js"></script>
 <script>
-  const res = Module.loadBoardFromMemory(arrayBuffer) // 0 = success
+  // Pass an ArrayBuffer to load a board natively
+  const res = Module.loadBoardFromMemory(arrayBuffer); // Returns 0 on success
 </script>
 ```
 
-See [WASM_PORT.md](WASM_PORT.md) for JS API (`loadBoardFromMemory`, `_loadBoardFromMemory`), CLI, and build docs.
+📚 See the [WASM_PORT.md](WASM_PORT.md) for full JS API documentation, CLI tooling, and build instructions.
 
-## Build from source
+## 🛠️ Build from Source
+
+To compile the C++ source to WebAssembly yourself:
 
 ```bash
 git clone https://github.com/pannet1/PCBView
 cd PCBView
-./scripts/build-wasm.sh  # needs Emscripten 3.1.69
-# output: build_wasm/src/openboardview/openboardview.js -> openboardview_wasm/_static/
+./scripts/build-wasm.sh  # Requires Emscripten 3.1.69
+# The built artifacts will be located at:
+# build_wasm/src/openboardview/openboardview.js -> openboardview_wasm/_static/
 ```
 
-## Credits
+## 💖 Credits & Acknowledgements
 
-* **Upstream viewer:** [OpenBoardView/OpenBoardView](https://github.com/OpenBoardView/OpenBoardView) (MIT) — Paul Daniels, chloridite and contributors. All board parsing, rendering and UI is theirs.
-* **Web port:** [Emscripten](https://emscripten.org/) (MIT) — C++ SDL2/ImGui → WebAssembly.
-* **This fork:** [pannet1/PCBView](https://github.com/pannet1/PCBView) (MIT) — packaging as `pcbview-wasm` + GitHub Pages. Fork detached from upstream to host the web build independently.
+* **Upstream Viewer:** [OpenBoardView/OpenBoardView](https://github.com/OpenBoardView/OpenBoardView) (MIT) — Huge thanks to Paul Daniels, chloridite, and all contributors. All board parsing, rendering logic, and core UI belong to them.
+* **Web Port Technology:** [Emscripten](https://emscripten.org/) (MIT) — Enabling C++ SDL2/ImGui to run in WebAssembly.
+* **This Fork:** [pannet1/PCBView](https://github.com/pannet1/PCBView) (MIT) — Maintained by pannet1 for packaging as `pcbview-wasm` and GitHub Pages deployment.
 
-_Board files stay in your browser. No storage, no tracking._
+---
+<div align="center">
+  <i>Board files stay in your browser. No storage, no tracking.</i>
+</div>
