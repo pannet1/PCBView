@@ -1,0 +1,41 @@
+name: Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.69
+      - name: Build WASM
+        run: |
+          ./scripts/build-wasm.sh
+          cp build_wasm/src/openboardview/openboardview.js openboardview_wasm/_static/
+          ls -lh openboardview_wasm/_static/
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: openboardview_wasm/_static
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
