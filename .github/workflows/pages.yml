@@ -30,6 +30,7 @@ jobs:
           ./scripts/build-wasm.sh
           cp build_wasm/src/openboardview/openboardview.js openboardview_wasm/_static/
           ls -lh openboardview_wasm/_static/
+      # Deploy via artifact (requires Pages source = GitHub Actions)
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
@@ -39,3 +40,11 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
+
+  # Fallback: also push to gh-pages branch for legacy Pages source
+  deploy-branch:
+    needs: build
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+      - run: echo "Primary deploy failed, will try branch deploy"

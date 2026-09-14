@@ -31,11 +31,16 @@ fi
 mkdir -p "$BUILD_DIR"
 
 echo "==> CMake (WASM, $BUILD_TYPE)"
-EM_CONFIG=/tmp/emscripten_config emcmake cmake -S "$DIR" -B "$BUILD_DIR" \
-  -DCMAKE_BUILD_TYPE="$BUILD_TYPE"
-
-echo "==> Make ($THREADS threads)"
-EM_CONFIG=/tmp/emscripten_config emmake make -C "$BUILD_DIR" -j"$THREADS"
+if [ -n "${EMSDK:-}" ] && [ -f "${EMSDK}/.emscripten" ]; then
+  echo "Using EMSDK at $EMSDK"
+  emcmake cmake -S "$DIR" -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE="$BUILD_TYPE"
+  echo "==> Make ($THREADS threads)"
+  emmake make -C "$BUILD_DIR" -j"$THREADS"
+else
+  EM_CONFIG=/tmp/emscripten_config emcmake cmake -S "$DIR" -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE="$BUILD_TYPE"
+  echo "==> Make ($THREADS threads)"
+  EM_CONFIG=/tmp/emscripten_config emmake make -C "$BUILD_DIR" -j"$THREADS"
+fi
 
 echo ""
 echo "Output:"
