@@ -4,7 +4,12 @@ FROM debian:10.13-slim AS linux-build-env
 ARG DEBIAN_FRONTEND=noninteractive DEBCONF_NOWARNINGS=yes
 RUN sed "s/deb.debian.org/archive.debian.org/g" -i /etc/apt/sources.list && \
     apt-get update && \
-    apt-get -y install --no-install-recommends ca-certificates g++ make cmake rpm libsdl2-dev libgtk-3-dev python3-jinja2 python3-pkg-resources git && \
+    apt-get -y install --no-install-recommends ca-certificates g++ make cmake rpm libsdl2-dev libgtk-3-dev python3-jinja2 python3-pkg-resources git wget && \
+    wget -q https://cmake.org/files/v3.22/cmake-3.22.6-linux-x86_64.sh -O /tmp/cmake.sh && \
+    sh /tmp/cmake.sh --skip-license --prefix=/usr/local && \
+    ln -sf /usr/local/bin/cmake /usr/bin/cmake && \
+    cmake --version && \
+    rm /tmp/cmake.sh && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

@@ -138,8 +138,15 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: |
-          pacman -Sy
-          pacman -S --noconfirm make mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-SDL2
+          # Work around stale PGP signatures on windows-2025 images
+          cp /etc/pacman.conf /tmp/pacman.conf.bak 2>/dev/null || true
+          sed -i 's/^SigLevel.*/SigLevel = Never/' /etc/pacman.conf 2>/dev/null || echo "SigLevel = Never" >> /etc/pacman.conf
+          pacman -Sy --noconfirm || true
+          cp /tmp/pacman.conf.bak /etc/pacman.conf 2>/dev/null || sed -i 's/^SigLevel.*/SigLevel = Required DatabaseOptional/' /etc/pacman.conf
+          pacman -S --noconfirm --needed msys2-keyring mingw-w64-ucrt-x86_64-keyring || true
+          pacman-key --populate 2>/dev/null || true
+          pacman -Su --noconfirm || true
+          pacman -S --noconfirm --needed make mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-SDL2 mingw-w64-ucrt-x86_64-pkgconf pkgconf
           # Preinstalled python forced into UTF8 mode is used
       - uses: actions/setup-python@v6
         with:

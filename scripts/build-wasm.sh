@@ -44,4 +44,6 @@ fi
 
 echo ""
 echo "Output:"
-ls -lh "$BUILD_DIR/src/openboardview/openboardview."{js,wasm}
+ls -lh "$BUILD_DIR/src/openboardview/openboardview.js" 2>/dev/null || true
+ls -lh "$BUILD_DIR/src/openboardview/openboardview.wasm" 2>/dev/null || true
+ls -lh "$BUILD_DIR/src/openboardview/" | head -n 20

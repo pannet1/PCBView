@@ -1,14 +1,27 @@
 ## COMMON ##
 include(FetchContent)
 
+# Polyfill for CMake < 3.14 (Debian 10 has 3.13.4) — FetchContent_MakeAvailable was added in 3.14
+if(CMAKE_VERSION VERSION_LESS "3.14")
+	macro(FetchContent_MakeAvailable)
+		foreach(_contentName IN ITEMS ${ARGN})
+			FetchContent_GetProperties(${_contentName})
+			if(NOT ${_contentName}_POPULATED)
+				FetchContent_Populate(${_contentName})
+				if(EXISTS ${${_contentName}_SOURCE_DIR}/CMakeLists.txt)
+					add_subdirectory(${${_contentName}_SOURCE_DIR} ${${_contentName}_BINARY_DIR})
+				endif()
+			endif()
+		endforeach()
+	endmacro()
+endif()
+
 option(ENABLE_GL1 "Build OpenGL 1 renderer." ON)
 option(ENABLE_GL3 "Build OpenGL 3 renderer." ON)
 option(ENABLE_GLES2 "Configure OpenGL 3 renderer to be OpenGL ES 2.0 compatible." OFF)
 
-if(NOT APPLE AND NOT WIN32 OR MINGW)
-	if(NOT EMSCRIPTEN)
-		find_package(PkgConfig REQUIRED)
-	endif()
+if(UNIX AND NOT APPLE AND NOT EMSCRIPTEN AND NOT WIN32)
+	find_package(PkgConfig REQUIRED)
 endif()
 
 if(EMSCRIPTEN)
@@ -208,10 +221,8 @@ else()
 endif()
 
 ## stb ##
-if(NOT APPLE AND NOT WIN32 OR MINGW)
-	if(NOT EMSCRIPTEN)
-		pkg_check_modules(STB stb)
-	endif()
+if(UNIX AND NOT APPLE AND NOT WIN32 AND NOT EMSCRIPTEN)
+	pkg_check_modules(STB stb)
 endif()
 if(NOT STB_FOUND)
 	find_path(STB_INCLUDE_DIRS NAMES "stb_image.h" HINTS ${STB_INCLUDE_DIRS} PATH_SUFFIXES "stb")
