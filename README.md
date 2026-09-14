@@ -2,7 +2,7 @@
 
 # 🔎 PCBView
 
-**A blazing-fast, 100% client-side PCB Viewer for the browser.**<br>
+**A blazing-fast, 100% client-side Web PCB Viewer.**<br>
 Drag & drop your board files instantly (.brd, .bdv, .asc, .cad, etc.). No server uploads. No tracking.
 
 [![Pages](https://github.com/pannet1/PCBView/actions/workflows/pages.yml/badge.svg)](https://pannet1.github.io/PCBView/)
@@ -14,7 +14,7 @@ Drag & drop your board files instantly (.brd, .bdv, .asc, .cad, etc.). No server
 
 ---
 
-**PCBView** is a lightweight [Emscripten](https://emscripten.org/) WebAssembly port of the excellent [OpenBoardView](https://github.com/OpenBoardView/OpenBoardView). It brings the power of native desktop PCB visualization directly to your browser.
+**PCBView** is a lightweight [Emscripten](https://emscripten.org/) WebAssembly port of the excellent [OpenBoardView](https://github.com/OpenBoardView/OpenBoardView). It brings the power of native desktop PCB visualization directly to the web.
 
 > ⚠️ **Note:** This repository is focused strictly on the WASM conversion, packaging, and GitHub Pages hosting. For the native desktop application and feature requests, please visit the upstream repository: [OpenBoardView/OpenBoardView](https://github.com/OpenBoardView/OpenBoardView).
 
@@ -80,5 +80,5 @@ cd PCBView
 
 ---
 <div align="center">
-  <i>Board files stay in your browser. No storage, no tracking.</i>
+  <i>Files never leave your device. No storage, no tracking.</i>
 </div>
