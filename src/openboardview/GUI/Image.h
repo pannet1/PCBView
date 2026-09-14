@@ -4,7 +4,7 @@
 #include <array>
 #include <string>
 
-#include "imgui/imgui.h"
+#include <imgui.h>
 
 #include "filesystem_impl.h"
 #include "Renderers/ImGuiRendererSDL.h"

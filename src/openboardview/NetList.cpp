@@ -1,6 +1,6 @@
 #include "NetList.h"
 
-#include "imgui/imgui.h"
+#include <imgui.h>
 
 NetList::NetList(KeyBindings &keyBindings, TcharStringCallback cbNetSelected) : keyBindings(keyBindings) {
 	cbNetSelected_ = cbNetSelected;

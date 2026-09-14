@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "SDL.h"
-#include "imgui/imgui.h"
+#include <imgui.h>
 
 #include "utils.h"
 

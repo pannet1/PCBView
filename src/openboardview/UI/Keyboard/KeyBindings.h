@@ -5,7 +5,7 @@
 #include <vector>
 #include <unordered_map>
 
-#include "imgui/imgui.h"
+#include <imgui.h>
 #include "KeyBinding.h"
 #include "KeyModifiers.h"
 #include "confparse.h"

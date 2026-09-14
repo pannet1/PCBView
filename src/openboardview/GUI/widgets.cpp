@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "imgui/imgui.h"
+#include <imgui.h>
 
 void RightAlignedText(const char *t, int w) {
 	ImVec2 s = ImGui::CalcTextSize(t);

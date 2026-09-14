@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "imgui/imgui.h"
+#include <imgui.h>
 
 #include "GUI/DPI.h"
 #include "version.h"

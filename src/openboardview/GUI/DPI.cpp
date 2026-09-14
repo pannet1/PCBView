@@ -1,6 +1,6 @@
 #include "DPI.h"
 
-#include "imgui/imgui.h"
+#include <imgui.h>
 
 static int dpi = 0;
 

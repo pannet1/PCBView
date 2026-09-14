@@ -1,7 +1,7 @@
 #include "BackgroundImage.h"
 
-#include "imgui/imgui.h"
-#include "imgui/misc/cpp/imgui_stdlib.h"
+#include <imgui.h>
+#include <imgui_stdlib.h>
 
 #include "platform.h"
 

@@ -2,8 +2,8 @@
 
 #include "platform.h" // Should be kept first
 #include "win32.h"
-#include "imgui/imgui.h"
-#include "utf8/utf8.h"
+#include <imgui.h>
+#include <utf8.h>
 #include "version.h"
 #include <codecvt>
 #include <iostream>

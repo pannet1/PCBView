@@ -2,7 +2,7 @@
 
 #include "BackgroundImage.h"
 
-#include "imgui/imgui.h"
+#include <imgui.h>
 #include "confparse.h"
 
 

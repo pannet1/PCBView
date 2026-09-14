@@ -1,6 +1,6 @@
 #include "PartList.h"
 
-#include "imgui/imgui.h"
+#include <imgui.h>
 
 PartList::PartList(KeyBindings &keyBindings, TcharStringCallback cbNetSelected) : keyBindings(keyBindings) {
 	cbNetSelected_ = cbNetSelected;

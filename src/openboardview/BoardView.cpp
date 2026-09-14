@@ -1,7 +1,7 @@
 #include "platform.h" // Should be kept first
 #include "BoardView.h"
 #include "history.h"
-#include "utf8/utf8.h"
+#include <utf8.h>
 #include "utils.h"
 
 #include <cmath>
@@ -33,9 +33,9 @@
 #include "GUI/Fonts.h"
 #include "GUI/widgets.h"
 #include "Annotations.h"
-#include "imgui/imgui.h"
-#include "imgui/imgui_internal.h" // For ImGui::FocusWindow()
-#include "imgui/misc/cpp/imgui_stdlib.h"
+#include <imgui.h>
+#include <imgui_internal.h> // For ImGui::FocusWindow()
+#include <imgui_stdlib.h>
 
 #include "NetList.h"
 #include "PartList.h"

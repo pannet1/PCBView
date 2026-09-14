@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "imgui/imgui.h"
+#include <imgui.h>
 
 class KeyModifiers {
 private:

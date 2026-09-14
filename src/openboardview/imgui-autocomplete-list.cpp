@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "imgui-autocomplete-list.h"
-#include "imgui/imgui.h"
+#include <imgui.h>
 
 const int ENTRY_COUNT            = 10;
 const char *ENTRIES[ENTRY_COUNT] = {

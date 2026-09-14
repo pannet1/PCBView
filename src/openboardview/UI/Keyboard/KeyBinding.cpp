@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <iostream>
 
-#include "imgui/imgui.h"
+#include <imgui.h>
 
 KeyBinding::KeyBinding() {
 }

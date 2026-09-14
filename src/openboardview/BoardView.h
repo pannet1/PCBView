@@ -6,7 +6,7 @@
 #include "Annotations.h"
 #include "confparse.h"
 #include "history.h"
-#include "imgui/imgui.h"
+#include <imgui.h>
 #include "UI/Keyboard/KeyBindings.h"
 #include "GUI/Config.h"
 #include "GUI/ColorScheme.h"

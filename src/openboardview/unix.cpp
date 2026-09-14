@@ -1,7 +1,7 @@
 #ifndef _WIN32
 
 #include "platform.h"
-#include "imgui/imgui.h"
+#include <imgui.h>
 #include "version.h"
 #include <SDL.h>
 #include <cstdint>
