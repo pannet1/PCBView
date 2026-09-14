@@ -28,8 +28,15 @@ fi
 STRCOMPILE="$(color 2 Compiling)"
 RECOMPILE=false
 COMPILEDIR="release_build"
-COMPILEFLAGS="-DCMAKE_INSTALL_PREFIX=/"
-export DESTDIR="$(cd "$(dirname "$0")" && pwd)"
+# CMAKE_INSTALL_PREFIX must be non-empty for CMake >=4 (empty breaks file(INSTALL) on macOS).
+# For Darwin we use repo root as prefix and no DESTDIR; for others keep empty + DESTDIR for compat.
+if [ "$(uname -s)" = "Darwin" ]; then
+  COMPILEFLAGS="-DCMAKE_INSTALL_PREFIX=$(cd "$(dirname "$0")" && pwd)"
+  export DESTDIR=""
+else
+  COMPILEFLAGS="-DCMAKE_INSTALL_PREFIX="
+  export DESTDIR="$(cd "$(dirname "$0")" && pwd)"
+fi
 BUILDTYPE="$(color 6 release)"
 
 for arg in "$@"; do
@@ -94,8 +101,14 @@ case "$(uname -s)" in
   *Darwin*)
     # Generate DMG
     if [ ! -z "$SIGNER" ]; then
-      codesign --deep --force --verbose --sign "$SIGNER" ../openboardview.app
-      codesign --deep --force --verbose --sign "$SIGNER" $DESTDIR/$COMPILEDIR/src/openboardview/openboardview.app
+      # DESTDIR may be empty on Darwin (prefix is repo root), handle both
+      if [ -z "$DESTDIR" ]; then
+        codesign --deep --force --verbose --sign "$SIGNER" "$(cd .. && pwd)/openboardview.app" 2>/dev/null || true
+        codesign --deep --force --verbose --sign "$SIGNER" "src/openboardview/openboardview.app" 2>/dev/null || true
+      else
+        codesign --deep --force --verbose --sign "$SIGNER" ../openboardview.app
+        codesign --deep --force --verbose --sign "$SIGNER" "$DESTDIR/$COMPILEDIR/src/openboardview/openboardview.app"
+      fi
     fi
     make package
     [ "$?" != "0" ] && color 1 "MAKE PACKAGE FAILED" && exit 1
