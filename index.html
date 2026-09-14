@@ -35,8 +35,9 @@
     <div class="muted">100% client-side • no upload • <a href="https://github.com/pannet1/PCBView" style="color:var(--muted)">pannet1/PCBView</a></div>
     <div class="spacer"></div>
     <label class="btn btn-primary" for="file">Open .brd</label>
+    <button class="btn" id="sampleBtn">Load sample</button>
     <input id="file" type="file" accept=".brd,.brd2,.bdv,.bvr,.bvr3,.asc,.cad,.fz,.xz,.cst" hidden>
-    <span class="muted">or drop file on canvas • <code>?file=https://…/board.brd</code></span>
+    <span class="muted">or drop file • <code>?file=sample.brd</code></span>
   </div>
   <div class="wrap" style="padding-top:0">
     <div id="drop" class="muted" style="flex:1">Drop .brd here or <label for="file" style="color:var(--accent);cursor:pointer;text-decoration:underline">choose file</label> — powered by <a href="https://github.com/OpenBoardView/OpenBoardView">OpenBoardView</a> + <a href="https://emscripten.org">Emscripten</a></div>
@@ -115,13 +116,16 @@ canvas.addEventListener('drop', function(e){
   setTimeout(check, 200);
 })();
 
-// ?file= support
+document.getElementById('sampleBtn').addEventListener('click', function(){ loadBoard('sample.brd'); });
+
+// ?file= support — auto-load sample.brd if no param (demo)
 (function(){
   var m = window.location.search.match(/[?&]file=([^&]+)/);
   if (m) loadBoard(decodeURIComponent(m[1]));
+  else if (!window.location.search.includes('nofile')) loadBoard('sample.brd');
 })();
 
-Module.onRuntimeInitialized = function(){ setStatus('Ready — drop a .brd file'); if(_pendingFile) {} };
+Module.onRuntimeInitialized = function(){ setStatus('Ready — drop a .brd file or try sample'); if(_pendingFile) {} };
 </script>
 <script src="openboardview.js"></script>
 </body>
