@@ -138,14 +138,21 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: |
-          # Work around stale PGP signatures on windows-2025 images
+          # Work around stale PGP signatures / corrupted DB on windows-2025 images
+          rm -rf /var/lib/pacman/sync/* 2>/dev/null || true
+          pacman-key --init 2>/dev/null || true
+          pacman-key --populate msys2 2>/dev/null || true
+          # Try to refresh keyring without DB signature check
+          curl -L -o /tmp/msys2-keyring.pkg.tar.zst https://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.zst 2>/dev/null || wget -O /tmp/msys2-keyring.pkg.tar.zst https://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.zst 2>/dev/null || true
+          pacman -U --noconfirm /tmp/msys2-keyring.pkg.tar.zst 2>/dev/null || true
+          # Disable signature check temporarily for initial sync
           cp /etc/pacman.conf /tmp/pacman.conf.bak 2>/dev/null || true
           sed -i 's/^SigLevel.*/SigLevel = Never/' /etc/pacman.conf 2>/dev/null || echo "SigLevel = Never" >> /etc/pacman.conf
           pacman -Sy --noconfirm || true
           cp /tmp/pacman.conf.bak /etc/pacman.conf 2>/dev/null || sed -i 's/^SigLevel.*/SigLevel = Required DatabaseOptional/' /etc/pacman.conf
-          pacman -S --noconfirm --needed msys2-keyring mingw-w64-ucrt-x86_64-keyring || true
+          pacman -S --noconfirm --needed msys2-keyring mingw-w64-ucrt-x86_64-keyring 2>/dev/null || true
           pacman-key --populate 2>/dev/null || true
-          pacman -Su --noconfirm || true
+          pacman -Su --noconfirm 2>/dev/null || true
           pacman -S --noconfirm --needed make mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-SDL2 mingw-w64-ucrt-x86_64-pkgconf pkgconf
           # Preinstalled python forced into UTF8 mode is used
       - uses: actions/setup-python@v6

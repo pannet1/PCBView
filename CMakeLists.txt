@@ -101,7 +101,8 @@ if(APPLE)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
 	endif()
 endif()
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Inject variables into version.h
 configure_file("${PROJECT_SOURCE_DIR}/src/openboardview/version.in.h"
