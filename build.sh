@@ -28,7 +28,7 @@ fi
 STRCOMPILE="$(color 2 Compiling)"
 RECOMPILE=false
 COMPILEDIR="release_build"
-COMPILEFLAGS="-DCMAKE_INSTALL_PREFIX="
+COMPILEFLAGS="-DCMAKE_INSTALL_PREFIX=/"
 export DESTDIR="$(cd "$(dirname "$0")" && pwd)"
 BUILDTYPE="$(color 6 release)"
 

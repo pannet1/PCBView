@@ -138,9 +138,15 @@ jobs:
           msystem: UCRT64
           update: true
           install: make mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-SDL2 mingw-w64-ucrt-x86_64-pkgconf pkgconf python python-pip
-      - name: Install dependencies (jinja2)
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+      - name: Install jinja2 (host)
+        shell: bash
+        run: python3 -m pip install jinja2 --break-system-packages || python -m pip install jinja2 --break-system-packages
+      - name: Install jinja2 (msys2)
         shell: msys2 {0}
-        run: python -m pip install jinja2 --break-system-packages
+        run: python -m pip install jinja2 --break-system-packages || python3 -m pip install jinja2 --break-system-packages
       - name: Build ucrt64 debug
         if: always()
         shell: msys2 {0}
