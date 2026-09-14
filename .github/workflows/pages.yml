@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: false
       - name: Setup Emscripten
         uses: mymindstorm/setup-emsdk@v14
         with:

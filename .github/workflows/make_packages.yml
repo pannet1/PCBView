@@ -6,7 +6,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: false
           fetch-depth: 0
       - uses: docker/setup-buildx-action@v3 # enable caching support for action below
       - uses: docker/build-push-action@v6
@@ -51,7 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: false
           fetch-depth: 0
       - uses: docker/setup-buildx-action@v3 # enable caching support for action below
       - uses: docker/build-push-action@v6
@@ -90,7 +90,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: false
           fetch-depth: 0
       - name: MacOS dependencies
         run: |
@@ -109,7 +109,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: false
           fetch-depth: 0
       - name: MacOS dependencies (jinja2)
         run: pip3 install jinja2 --break-system-packages
@@ -128,7 +128,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: false
           fetch-depth: 0
       - name: Set up shell
         shell: bash

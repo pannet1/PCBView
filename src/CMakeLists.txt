@@ -1,4 +1,6 @@
 ## COMMON ##
+include(FetchContent)
+
 option(ENABLE_GL1 "Build OpenGL 1 renderer." ON)
 option(ENABLE_GL3 "Build OpenGL 3 renderer." ON)
 option(ENABLE_GLES2 "Configure OpenGL 3 renderer to be OpenGL ES 2.0 compatible." OFF)
@@ -11,25 +13,23 @@ endif()
 
 if(EMSCRIPTEN)
 	set(ENABLE_GL1 OFF)
-	set(ENABLE_GL3 ON)     # GL3 backend + GLES2 compat = WebGL
-	set(ENABLE_GLES2 ON)   # Makes GL3 backend use GLES2/WebGL calls
+	set(ENABLE_GL3 ON)
+	set(ENABLE_GLES2 ON)
 endif()
 
 ## utf8.h ##
-find_path(UTF8_INCLUDE_DIR
-	NAMES "utf8.h"
-	PATH_SUFFIXES "utf8")
+find_path(UTF8_INCLUDE_DIR NAMES "utf8.h" PATH_SUFFIXES "utf8")
 if(NOT UTF8_INCLUDE_DIR)
-	execute_process(
-		COMMAND git submodule update --init src/utf8
-		WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-		)
-	set(UTF8_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/utf8)
+	FetchContent_Declare(utf8
+		GIT_REPOSITORY https://github.com/sheredom/utf8.h.git
+		GIT_TAG 3e9e3ec15c7bf129664ab2a113eb03b54ee0b584
+	)
+	FetchContent_MakeAvailable(utf8)
+	set(UTF8_INCLUDE_DIR ${utf8_SOURCE_DIR})
 endif()
 
 ## zlib ##
 if(EMSCRIPTEN)
-	# Emscripten provides zlib via port flag — link only (bundled zlib provides headers)
 	set(ZLIB_INCLUDE_DIRS "")
 	set(ZLIB_LIBRARIES "")
 else()
@@ -38,31 +38,29 @@ else()
 	endif()
 	find_package(ZLIB)
 	if(NOT ZLIB_FOUND)
-		execute_process(
-			COMMAND git submodule update --init src/zlib
-			WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+		FetchContent_Declare(zlib_fetch
+			GIT_REPOSITORY https://github.com/madler/zlib.git
+			GIT_TAG 51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf
 		)
-		execute_process( # Dirty workaround to prevent zlib from building examples
-			COMMAND sed "/^# Example binaries$/,$d" -i src/zlib/CMakeLists.txt
-			WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-		)
-
-		set(SKIP_INSTALL_FILES YES)
-		set(SKIP_INSTALL_HEADERS NO)
-		add_subdirectory(zlib)
-
+		FetchContent_GetProperties(zlib_fetch)
+		if(NOT zlib_fetch_POPULATED)
+			FetchContent_Populate(zlib_fetch)
+			execute_process(COMMAND sed "/^# Example binaries$/,$d" -i ${zlib_fetch_SOURCE_DIR}/CMakeLists.txt)
+			set(SKIP_INSTALL_FILES YES)
+			set(SKIP_INSTALL_HEADERS NO)
+			add_subdirectory(${zlib_fetch_SOURCE_DIR} ${zlib_fetch_BINARY_DIR})
+		endif()
 		if(WIN32)
 			set(ZLIB_LIBRARIES zlibstatic CACHE INTERNAL "zlib library")
 		else()
 			set(ZLIB_LIBRARIES z CACHE INTERNAL "zlib library")
 		endif()
-		set(ZLIB_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/zlib ${CMAKE_BINARY_DIR}/src/zlib)
+		set(ZLIB_INCLUDE_DIRS ${zlib_fetch_SOURCE_DIR} ${zlib_fetch_BINARY_DIR})
 	endif()
 endif()
 
 ## SQLite3 ##
 if(EMSCRIPTEN)
-	# Emscripten provides SQLite3 via port flag
 	add_library(SQLite::SQLite3 INTERFACE IMPORTED)
 	target_link_options(SQLite::SQLite3 INTERFACE "-s USE_SQLITE3=1")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s USE_SQLITE3=1")
@@ -74,23 +72,23 @@ else()
 endif()
 
 ## glad ##
-execute_process(
-	COMMAND git submodule update --init src/glad
-	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+FetchContent_Declare(glad
+	GIT_REPOSITORY https://github.com/Dav1dde/glad.git
+	GIT_TAG 73db193f853e2ee079bf3ca8a64aa2eaf6459043
 )
-set(GLAD_SOURCES_DIR "${PROJECT_SOURCE_DIR}/src/glad")
-add_subdirectory(glad/cmake glad_cmake)
+FetchContent_MakeAvailable(glad)
+set(GLAD_SOURCES_DIR "${glad_SOURCE_DIR}")
+add_subdirectory(${glad_SOURCE_DIR}/cmake ${CMAKE_BINARY_DIR}/glad_cmake)
 
 if(ENABLE_GL1 OR ENABLE_GL3)
-glad_add_library(glad_gl REPRODUCIBLE API gl:compatibility=3.2 EXTENSIONS NONE)
+	glad_add_library(glad_gl REPRODUCIBLE API gl:compatibility=3.2 EXTENSIONS NONE)
 endif()
 if(ENABLE_GLES2)
-glad_add_library(glad_gles REPRODUCIBLE API gles2=2.0 EXTENSIONS GL_OES_element_index_uint GL_EXT_texture_format_BGRA8888 GL_OES_vertex_array_object)
+	glad_add_library(glad_gles REPRODUCIBLE API gles2=2.0 EXTENSIONS GL_OES_element_index_uint GL_EXT_texture_format_BGRA8888 GL_OES_vertex_array_object)
 endif()
 
 ## SDL2 ##
 if(EMSCRIPTEN)
-	# Emscripten provides SDL2 via port flag
 	add_library(SDL2::SDL2 INTERFACE IMPORTED)
 	add_library(SDL2::SDL2main INTERFACE IMPORTED)
 	add_definitions(-DENABLE_SDL2)
@@ -98,8 +96,6 @@ if(EMSCRIPTEN)
 else()
 	find_package(SDL2 REQUIRED CONFIG)
 	add_definitions(-DENABLE_SDL2)
-
-	# Create namespace targets for system with SDL2 older than 2.0.12
 	if(NOT TARGET SDL2::SDL2)
 		add_library(SDL2::SDL2 SHARED IMPORTED)
 		find_library(SDL2_LIBRARY SDL2)
@@ -119,118 +115,95 @@ else()
 endif()
 
 ## imgui ##
-# note: in the future there may be integrated CMake support into imgui
-# see: https://github.com/ocornut/imgui/pull/1713
-# for now do it manually, after glad and SDL2 because we use the includes for the sdl_opengl examples
-execute_process(
-	COMMAND git submodule update --init src/imgui
-	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+FetchContent_Declare(imgui
+	GIT_REPOSITORY https://github.com/ocornut/imgui.git
+	GIT_TAG 8936b58fe26e8c3da834b8f60b06511d537b4c63
 )
+FetchContent_MakeAvailable(imgui)
 
-# workaround for OpenGL include for OpenGL2, need to be glad rather than gl itself
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_opengl2.cpp" input)
-string(REPLACE "OpenGL/gl.h" "glad/gl.h" input "${input}")
-string(REPLACE "GL/gl.h" "glad/gl.h" input "${input}")
-file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_opengl2.cpp" "${input}")
+# workaround for OpenGL includes — patch fetched sources in place (writable in build/_deps)
+file(READ "${imgui_SOURCE_DIR}/backends/imgui_impl_opengl2.cpp" _opengl2_src)
+string(REPLACE "OpenGL/gl.h" "glad/gl.h" _opengl2_src "${_opengl2_src}")
+string(REPLACE "GL/gl.h" "glad/gl.h" _opengl2_src "${_opengl2_src}")
+file(WRITE "${imgui_SOURCE_DIR}/backends/imgui_impl_opengl2.cpp" "${_opengl2_src}")
 
-# workaround for OpenGLES includes, need to be glad rather than gles itself
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_opengl3.cpp" input)
-string(REPLACE "GLES2/gl2.h" "glad/gles2.h" input "${input}")
-string(REPLACE "GLES2/gl2ext.h" "glad/gles2.h" input "${input}")
-string(REPLACE "GLES3/gl3.h" "glad/gles2.h" input "${input}")
-file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_opengl3.cpp" "${input}")
+file(READ "${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp" _opengl3_src)
+string(REPLACE "GLES2/gl2.h" "glad/gles2.h" _opengl3_src "${_opengl3_src}")
+string(REPLACE "GLES2/gl2ext.h" "glad/gles2.h" _opengl3_src "${_opengl3_src}")
+string(REPLACE "GLES3/gl3.h" "glad/gles2.h" _opengl3_src "${_opengl3_src}")
+file(WRITE "${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp" "${_opengl3_src}")
 
-set(SOURCES
-	imgui/imgui.cpp
-	imgui/imgui_draw.cpp
-	imgui/imgui_tables.cpp
-	imgui/imgui_widgets.cpp
-	imgui/misc/cpp/imgui_stdlib.cpp
-	imgui/backends/imgui_impl_sdl2.cpp)
-
-
+set(IMGUI_SOURCES
+	${imgui_SOURCE_DIR}/imgui.cpp
+	${imgui_SOURCE_DIR}/imgui_draw.cpp
+	${imgui_SOURCE_DIR}/imgui_tables.cpp
+	${imgui_SOURCE_DIR}/imgui_widgets.cpp
+	${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp
+	${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
+)
 if(ENABLE_GL1)
-	LIST(APPEND SOURCES
-		imgui/backends/imgui_impl_opengl2.cpp
-	)
+	list(APPEND IMGUI_SOURCES ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl2.cpp)
 endif()
 if(ENABLE_GL3)
-	LIST(APPEND SOURCES
-		imgui/backends/imgui_impl_opengl3.cpp
-	)
+	list(APPEND IMGUI_SOURCES ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp)
 endif()
 
-add_library(imgui STATIC ${SOURCES})
-target_compile_definitions(imgui PUBLIC "-DImDrawIdx=unsigned int") # short is not enough for us
-target_compile_definitions(imgui PUBLIC "-DIMGUI_IMPL_OPENGL_LOADER_GLAD") # We use glad
-# Configure GL3 renderer to be GLES2 compatible if GLES2 is enabled
+add_library(imgui STATIC ${IMGUI_SOURCES})
+target_compile_definitions(imgui PUBLIC "-DImDrawIdx=unsigned int")
+target_compile_definitions(imgui PUBLIC "-DIMGUI_IMPL_OPENGL_LOADER_GLAD")
 if(ENABLE_GLES2)
 	target_compile_definitions(imgui PUBLIC "-DIMGUI_IMPL_OPENGL_ES2")
 endif()
 target_include_directories(imgui PUBLIC
-	${CMAKE_CURRENT_SOURCE_DIR}/imgui
-	${CMAKE_CURRENT_SOURCE_DIR}/imgui/examples
-	${CMAKE_CURRENT_SOURCE_DIR}/imgui/misc/cpp
+	${imgui_SOURCE_DIR}
+	${imgui_SOURCE_DIR}/examples
+	${imgui_SOURCE_DIR}/misc/cpp
 )
 if(ENABLE_GLES2)
-target_link_libraries(imgui
-  glad_gles
-)
+	target_link_libraries(imgui glad_gles)
 elseif(ENABLE_GL1 OR ENABLE_GL3)
-  target_link_libraries(imgui
-    glad_gl
-  )
+	target_link_libraries(imgui glad_gl)
 endif()
 if(MINGW)
-target_link_libraries(imgui
-	SDL2::SDL2-static
-)
+	target_link_libraries(imgui SDL2::SDL2-static)
 else()
-target_link_libraries(imgui
-	SDL2::SDL2
-)
+	target_link_libraries(imgui SDL2::SDL2)
 endif()
-
-#install(TARGETS imgui DESTINATION ${INSTALL_ARCHIVE_DIR}) # No need to install a static lib
 
 ## filesystem ##
 message(CHECK_START "Checking for std::filesystem")
-# On macOS, std::filesystem requires macOS 10.15 or newer
 if(APPLE AND DEFINED CMAKE_OSX_DEPLOYMENT_TARGET AND CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "10.15")
 	message(CHECK_FAIL "not available (macOS ${CMAKE_OSX_DEPLOYMENT_TARGET}), using ghc::filesystem")
-	execute_process(
-		COMMAND git submodule update --init src/filesystem
-		WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+	FetchContent_Declare(ghcfilesystem
+		GIT_REPOSITORY https://github.com/gulrak/filesystem.git
+		GIT_TAG 3f1c185ab414e764c694b8171d1c4d8c5c437517
 	)
-	add_subdirectory(filesystem)
+	FetchContent_MakeAvailable(ghcfilesystem)
 	set(FILESYSTEM_LIBRARIES ghc_filesystem)
-## GCC 9 and Clang 9 include filesystem in the standard library. Apple is of course messing with us and AppleClang 11.4 is Clang 9.0
 elseif(((CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 9.0)
 	OR (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 11.4))
 	message(CHECK_PASS "available")
 	set(CMAKE_CXX_STANDARD 17)
 	set(FILESYSTEM_LIBRARIES)
 	add_definitions(-DWITH_STD_FILESYSTEM)
-# Clang 8 requires explicit linking with lc++fs. AppleClang 11.0 is Clang 8.0
 elseif((CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 8.0)
 	OR (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 11.0))
 	message(CHECK_PASS "available")
 	set(CMAKE_CXX_STANDARD 17)
 	set(FILESYSTEM_LIBRARIES lc++fs)
 	add_definitions(-DWITH_STD_FILESYSTEM)
-# GCC 8 requires explicit linking with stdc++fs
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 8.0)
 	message(CHECK_PASS "available")
 	set(CMAKE_CXX_STANDARD 17)
 	set(FILESYSTEM_LIBRARIES stdc++fs)
 	add_definitions(-DWITH_STD_FILESYSTEM)
-else() # Other compiler/version are unsupported, use external lib
+else()
 	message(CHECK_FAIL "not available, using ghc::filesystem")
-	execute_process(
-		COMMAND git submodule update --init src/filesystem
-		WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+	FetchContent_Declare(ghcfilesystem
+		GIT_REPOSITORY https://github.com/gulrak/filesystem.git
+		GIT_TAG 3f1c185ab414e764c694b8171d1c4d8c5c437517
 	)
-	add_subdirectory(filesystem)
+	FetchContent_MakeAvailable(ghcfilesystem)
 	set(FILESYSTEM_LIBRARIES ghc_filesystem)
 endif()
 
@@ -240,36 +213,30 @@ if(NOT APPLE AND NOT WIN32 OR MINGW)
 		pkg_check_modules(STB stb)
 	endif()
 endif()
-
 if(NOT STB_FOUND)
-	find_path(STB_INCLUDE_DIRS
-		NAMES "stb_image.h"
-		HINTS ${STB_INCLUDE_DIRS}
-		PATH_SUFFIXES "stb"
-	)
+	find_path(STB_INCLUDE_DIRS NAMES "stb_image.h" HINTS ${STB_INCLUDE_DIRS} PATH_SUFFIXES "stb")
 endif()
-
 if(STB_INCLUDE_DIRS)
 	add_definitions(${STB_CFLAGS_OTHER})
 	include_directories(${STB_INCLUDE_DIRS})
 else()
-	execute_process(
-		COMMAND git submodule update --init src/stb
-		WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+	FetchContent_Declare(stb
+		GIT_REPOSITORY https://github.com/nothings/stb.git
+		GIT_TAG f54acd4e13430c5122cab4ca657705c84aa61b08
 	)
-	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/stb)
+	FetchContent_MakeAvailable(stb)
+	include_directories(${stb_SOURCE_DIR})
 endif()
-
 add_definitions(-DSTBI_FAILURE_USERMSG)
 
 ## mpc - Micro Parser Combinators ##
-execute_process(
-	COMMAND git submodule update --init src/mpc
-	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+FetchContent_Declare(mpc_fetch
+	GIT_REPOSITORY https://github.com/orangeduck/mpc.git
+	GIT_TAG 65f20a1a0b3249a475efa8ecb7b5ecd2c1c071c4
 )
-
-add_library(mpc STATIC "mpc/mpc.c")
-
+FetchContent_MakeAvailable(mpc_fetch)
+add_library(mpc STATIC "${mpc_fetch_SOURCE_DIR}/mpc.c")
+target_include_directories(mpc PUBLIC ${mpc_fetch_SOURCE_DIR})
 
 ## OpenBoardView ##
 add_subdirectory(openboardview)

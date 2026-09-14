@@ -38,7 +38,7 @@ See [WASM_PORT.md](WASM_PORT.md) for JS API (`loadBoardFromMemory`, `_loadBoardF
 ## Build from source
 
 ```bash
-git clone --recurse-submodules https://github.com/pannet1/PCBView
+git clone https://github.com/pannet1/PCBView
 cd PCBView
 ./scripts/build-wasm.sh  # needs Emscripten 3.1.69
 # output: build_wasm/src/openboardview/openboardview.js -> openboardview_wasm/_static/
