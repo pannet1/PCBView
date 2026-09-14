@@ -1,23 +1,27 @@
-# OpenBoardView WASM
+# PCBView — WASM
 
-OpenBoardView compiled to asm.js for embedding in web apps.
+**PCBView** is an [Emscripten](https://emscripten.org/) port of [OpenBoardView/OpenBoardView](https://github.com/OpenBoardView/OpenBoardView) compiled to WebAssembly/asm.js for the browser.
+
+Live: **https://pannet1.github.io/PCBView/** — drag & drop any `.brd` file, 100% client-side.
+
+Credits: Upstream viewer © OpenBoardView contributors (MIT), Web port via Emscripten (MIT), packaging by [pannet1/PCBView](https://github.com/pannet1/PCBView).
 
 ## Install
 
 ```toml
-# pyproject.toml
-[project.dependencies]
-openboardview-wasm = { git = "https://github.com/pannet1/OpenBoardView", branch = "feat/wasm-build" }
+# pyproject.toml (either name works — pcbview-wasm is new, openboardview-wasm kept for compat)
+pcbview-wasm = { git = "https://github.com/pannet1/PCBView", branch = "master" }
+# or: openboardview-wasm = { git = "https://github.com/pannet1/PCBView" }
 ```
 
 ```bash
-uv sync
+uv sync  # or pip install pcbview-wasm
 ```
 
 ## FastAPI — 2 lines
 
 ```python
-from openboardview_wasm import make_static_files_app
+from openboardview_wasm import make_static_files_app  # also: from pcbview import make_static_files_app
 app.mount("/wasm", make_static_files_app(), name="wasm")
 ```
 
@@ -61,9 +65,9 @@ openboardview-wasm build        # build from C++ (needs Emscripten)
 ## Build from source
 
 ```bash
-git clone --recurse-submodules https://github.com/pannet1/OpenBoardView
-cd OpenBoardView
-./scripts/build-wasm.sh
+git clone --recurse-submodules https://github.com/pannet1/PCBView
+cd PCBView
+./scripts/build-wasm.sh  # needs Emscripten (see third_party/emsdk if using submodule)
 ```
 
 Output: `build_wasm/src/openboardview/openboardview.js`
@@ -88,4 +92,10 @@ Then commit and push. Users get the update on next `uv sync`.
 
 - Fonts not available in browser — ImGui uses default (harmless warnings)
 - SQLite annotations disabled in WASM — read-only viewer
-- No file picker — load boards programmatically via JS API
+- GitHub Pages is static — board files stay in your browser, never uploaded
+
+## Credits
+
+* **Viewer:** [OpenBoardView/OpenBoardView](https://github.com/OpenBoardView/OpenBoardView) — MIT
+* **Compiler:** [emscripten-core/emsdk](https://github.com/emscripten-core/emsdk) / Emscripten — MIT
+* **Fork & hosting:** [pannet1/PCBView](https://github.com/pannet1/PCBView) — MIT, https://pannet1.github.io/PCBView/

@@ -1,3 +1,19 @@
+# PCBView — Browser PCB Viewer [![Pages](https://github.com/pannet1/PCBView/actions/workflows/pages.yml/badge.svg)](https://pannet1.github.io/PCBView/) [![Build](https://github.com/pannet1/PCBView/actions/workflows/make_packages.yml/badge.svg)](https://github.com/pannet1/PCBView/actions/)
+
+> **Live:** https://pannet1.github.io/PCBView/ — drag & drop any `.brd` (BRD2, BRD, BDV, BVR, etc.) — 100% client-side, no upload to server. Embed via `openboardview.js` WASM.
+>
+> **No active feature dev** — this is a thin Emscripten port of OpenBoardView for the web. For desktop, use upstream.
+
+---
+
+## Credits
+
+* **Upstream viewer:** [OpenBoardView/OpenBoardView](https://github.com/OpenBoardView/OpenBoardView) (MIT) — Paul Daniels, chloridite, contributors. All board parsing, rendering, and UI is theirs.
+* **Web port:** [Emscripten](https://emscripten.org/) (MIT) — compiles C++ SDL2/ImGui to WebAssembly. Build via `./scripts/build-wasm.sh` (see `WASM_PORT.md`).
+* **This fork:** [pannet1/PCBView](https://github.com/pannet1/PCBView) — packaging as `pcbview-wasm`/`openboardview-wasm` + GitHub Pages hosting. No board files are stored — files are parsed in-browser via `Module.loadBoardFromMemory()`.
+
+---
+
 ## Open Board Viewer [![Build Status](../../actions/workflows/make_packages.yml/badge.svg?event=push)](../../actions/)
 
 Linux SDL/ImGui edition software for viewing .brd files, intended as a drop-in

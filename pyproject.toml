@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "openboardview-wasm"
+name = "pcbview-wasm"
 version = "0.1.0"
-description = "OpenBoardView for the browser – WebAssembly board file viewer"
+description = "PCBView for the browser – WebAssembly board file viewer (Emscripten port of OpenBoardView)"
 readme = "WASM_PORT.md"
 license = { text = "MIT" }
 requires-python = ">=3.9"
@@ -17,13 +17,17 @@ fastapi = ["fastapi>=0.100"]
 serve = ["uvicorn>=0.20"]
 
 [project.urls]
-Homepage = "https://github.com/pannet1/OpenBoardView"
+Homepage = "https://github.com/pannet1/PCBView"
+Documentation = "https://pannet1.github.io/PCBView/"
+"Bug Tracker" = "https://github.com/pannet1/PCBView/issues"
 
 [project.scripts]
 openboardview-wasm = "openboardview_wasm._cli:main"
+pcbview = "openboardview_wasm._cli:main"
+pcbview-wasm = "openboardview_wasm._cli:main"
 
 [tool.setuptools.packages.find]
-include = ["openboardview_wasm*"]
+include = ["openboardview_wasm*", "pcbview*"]
 
 [tool.setuptools.package-data]
 openboardview_wasm = ["_static/*"]
