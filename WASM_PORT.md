@@ -67,7 +67,7 @@ openboardview-wasm build        # build from C++ (needs Emscripten)
 ```bash
 git clone https://github.com/pannet1/PCBView
 cd PCBView
-./scripts/build-wasm.sh  # needs Emscripten (see third_party/emsdk if using submodule)
+./scripts/build-wasm.sh  # needs Emscripten 3.1.69 (via setup-emsdk or emsdk)
 ```
 
 Output: `build_wasm/src/openboardview/openboardview.js`
@@ -96,6 +96,6 @@ Then commit and push. Users get the update on next `uv sync`.
 
 ## Credits
 
-* **Viewer:** [OpenBoardView/OpenBoardView](https://github.com/OpenBoardView/OpenBoardView) — MIT
-* **Compiler:** [emscripten-core/emsdk](https://github.com/emscripten-core/emsdk) / Emscripten — MIT
-* **Fork & hosting:** [pannet1/PCBView](https://github.com/pannet1/PCBView) — MIT, https://pannet1.github.io/PCBView/
+* **Upstream viewer:** [OpenBoardView/OpenBoardView](https://github.com/OpenBoardView/OpenBoardView) (MIT) — Paul Daniels, chloridite and contributors.
+* **Web port:** [Emscripten](https://emscripten.org/) (MIT) — C++ SDL2/ImGui → WebAssembly.
+* **This fork:** [pannet1/PCBView](https://github.com/pannet1/PCBView) (MIT) — packaging as `pcbview-wasm` + GitHub Pages. Fork detached from upstream to host the web build independently.
