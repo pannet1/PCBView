@@ -361,7 +361,7 @@
         </svg>
       </button>
     </form>
-    <button class="btn" id="sampleBtn">Load Sample</button>
+
     <label class="btn btn-primary" for="file">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -378,11 +378,32 @@
   <!-- Empty State Overlay -->
   <div id="empty-state">
     <div class="empty-box">
-      <h2>No Board Loaded</h2>
-      <p>Drag and drop your PCB board file anywhere on this screen, or open a file from your computer.</p>
-      <label class="btn btn-primary" for="file" style="cursor: pointer;">
-        Select File
-      </label>
+      <h2 style="display:flex; align-items:center; justify-content:center; gap:8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        Open Board
+      </h2>
+      <p>Drag and drop your PCB board file anywhere on this screen, or select a file from your computer.</p>
+      
+      <div style="display:flex; flex-direction:column; gap:16px; margin-top:24px;">
+        <label class="btn btn-primary" for="file" style="cursor: pointer; justify-content:center;">
+          Open Local File
+        </label>
+        
+        <div style="display:flex; align-items:center; gap:8px;">
+          <hr style="flex:1; border:none; border-top:1px solid var(--border);">
+          <span style="color:var(--muted); font-size:0.75rem;">OR</span>
+          <hr style="flex:1; border:none; border-top:1px solid var(--border);">
+        </div>
+        
+        <div style="display:flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: rgba(15, 23, 42, 0.6);">
+          <input type="text" id="urlInput" placeholder="Enter board file URL..." style="background:transparent; border:none; color:var(--fg); padding:8px 12px; outline:none; flex:1; font-size:0.875rem;">
+          <button class="btn" id="loadUrlBtn" style="border:none; border-left:1px solid var(--border); border-radius:0;">Load</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -541,25 +562,29 @@ document.body.addEventListener('drop', e => {
   setTimeout(check, 200);
 })();
 
-document.getElementById('sampleBtn').addEventListener('click', function(){ 
-  loadBoard('sample.brd'); 
+document.getElementById('loadUrlBtn').addEventListener('click', function(){ 
+  var url = document.getElementById('urlInput').value.trim();
+  if (url) {
+    loadBoard(url);
+    document.getElementById('urlInput').value = '';
+  }
 });
 
-// ?file= support — auto-load sample.brd if no param and not nofile
+document.getElementById('urlInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    document.getElementById('loadUrlBtn').click();
+  }
+});
+
+// ?file= support
 (function(){
   var m = window.location.search.match(/[?&]file=([^&]+)/);
   if (m) loadBoard(decodeURIComponent(m[1]));
-  else if (!window.location.search.includes('nofile')) loadBoard('sample.brd');
 })();
 
 Module.onRuntimeInitialized = function(){ 
   if(!_pendingFile) {
-    if (!window.location.search.includes('nofile')) {
-      // It will auto-load sample.brd via the IIFE above
-    } else {
-      // Ready state for nofile
-      showStatus('Ready', 3000);
-    }
+    showStatus('Ready', 3000);
   } 
 };
 </script>
